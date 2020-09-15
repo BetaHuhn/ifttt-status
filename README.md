@@ -21,7 +21,7 @@ The Action [IFTTT-Status](https://github.com/BetaHuhn/ifttt-status) will sent th
 To get started include this at the end of your Workflow .yml file (make sure to use your own values below or add them as [secrets](https://docs.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets)):
 
 ```yaml
-uses: betahuhn/ifttt-status@v1
+uses: betahuhn/ifttt-status@v1.0.2
 with:
   event: ${{ secrets.EVENT }} # your-webhook-event
   key: ${{ secrets.TOKEN }} # your-webhook-secret-key
