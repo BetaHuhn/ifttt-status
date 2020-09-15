@@ -1,21 +1,48 @@
 const core = require('@actions/core');
-const wait = require('./wait');
+const got = require('got');
 
+const key = process.env.INPUT_KEY;
+const event = process.env.INPUT_EVENT;
+const status = process.env.INPUT_STATUS;
+const runId = process.env.GITHUB_RUN_ID;
+const repo = process.env.GITHUB_REPOSITORY;
+const workflow = process.env.GITHUB_WORKFLOW;
 
-// most @actions toolkit packages have async methods
 async function run() {
-  try {
-    const ms = core.getInput('milliseconds');
-    core.info(`Waiting ${ms} milliseconds ...`);
+	if (key === undefined || event === undefined || status === undefined){
+		return core.setFailed("No key, event or status specified")
+	}
 
-    core.debug((new Date()).toTimeString()); // debug is only output if you set the secret `ACTIONS_RUNNER_DEBUG` to true
-    await wait(parseInt(ms));
-    core.info((new Date()).toTimeString());
+	let title;
+	let message;
 
-    core.setOutput('time', new Date().toTimeString());
-  } catch (error) {
-    core.setFailed(error.message);
-  }
+	if(status === "success"){
+		title = `${workflow} succeeded`;
+		message = `The Workflow ${workflow} on the Repo ${repo} finished without any errors. Click to see more.`
+	}else if(status === "failure"){
+		title = `${workflow} failed`;
+		message = `The Workflow ${workflow} on the Repo ${repo} did not finish without any errors. Click to see more.`
+	}else{
+		return core.debug("Invalid status, not running workflow");
+	}
+
+	const url = `https://github.com/${repo}/actions/runs/${runId}`;
+	
+	try {
+		const { body } = await got.post(`https://maker.ifttt.com/trigger/${event}/with/key/${key}`, {
+			json: {
+				value1: title,
+				value2: message,
+				value3: url
+			}
+		});
+
+		core.debug(body)
+
+	} catch (error) {
+		core.debug(error)
+		core.setFailed(error.response.body)
+	}
 }
 
 run();
