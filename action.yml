@@ -1,5 +1,6 @@
 name: 'IFTTT-Status'
 description: 'Send Workflow status notifications to an IFTTT WebHook'
+author: 'BetaHuhn'
 inputs:
   event:
     description: 'IFTTT event to be called'
