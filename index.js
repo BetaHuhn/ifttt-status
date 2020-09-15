@@ -18,10 +18,10 @@ async function run() {
 
 	if(status === "success"){
 		title = `${workflow} succeeded`;
-		message = `The Workflow ${workflow} on the Repo ${repo} finished without any errors. Click to see more.`
+		message = `The Workflow ${workflow} on the Repo ${repo} finished without any errors.`
 	}else if(status === "failure"){
 		title = `${workflow} failed`;
-		message = `The Workflow ${workflow} on the Repo ${repo} did not finish without any errors. Click to see more.`
+		message = `The Workflow ${workflow} on the Repo ${repo} did not finish without any errors.`
 	}else{
 		return core.debug("Invalid status, not running workflow");
 	}
