@@ -1,6 +1,6 @@
 {
   "name": "ifttt-status",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Send workflow status notifications to an IFTTT WebHook",
   "main": "index.js",
   "scripts": {
