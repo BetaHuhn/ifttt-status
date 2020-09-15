@@ -18,7 +18,7 @@ The Action [IFTTT-Status](https://github.com/BetaHuhn/ifttt-status) will sent th
 
 ## 🚀 Get started
 
-To get started include this at the end of your Workflow .yml file (make sure to replace the values below or add add [secrets](https://docs.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets)):
+To get started include this at the end of your Workflow .yml file (make sure to use your own values below or add them as [secrets](https://docs.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets)):
 
 ```yaml
 uses: betahuhn/ifttt-status@v1
@@ -32,9 +32,9 @@ with:
 
 | field  | On success | On failure |
 | ------------- | ------------- | ------------- |
-| value1  | (WORKFLOW_NAME) succeeded  | (WORKFLOW_NAME) failed  |
-| value2  | The Workflow (WORKFLOW_NAME) on the Repo (REPO_NAME) finished without any errors. | The Workflow (WORKFLOW_NAME) on the Repo (REPO_NAME) did not finish without any errors.  |
-| value3  | (Link to the Workflow)  | (Link to the Workflow)  |
+| **value1**  | *WORKFLOW_NAME* succeeded  | *WORKFLOW_NAME* failed  |
+| **value2**  | The Workflow *WORKFLOW_NAME* on the Repo *REPO_NAME* finished without any errors. | The Workflow *WORKFLOW_NAME* on the Repo *REPO_NAME* did not finish without any errors.  |
+| **value3**  | *Link to the Workflow*  | *Link to the Workflow*  |
 
 ## ✨ Planned features
 
