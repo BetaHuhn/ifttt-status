@@ -1,10 +1,10 @@
 name: "build"
-
 on:
-  push:
-    branches: [ master, 'releases/*' ]
   pull_request:
-    branches: [ master, 'releases/*' ]
+  push:
+    branches:
+      - main
+      - 'releases/*'
 
 jobs:
   build:
