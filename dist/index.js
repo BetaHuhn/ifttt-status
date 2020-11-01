@@ -70,6 +70,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const os = __importStar(__webpack_require__(2087));
+const utils_1 = __webpack_require__(5278);
 /**
  * Commands
  *
@@ -123,28 +124,14 @@ class Command {
         return cmdStr;
     }
 }
-/**
- * Sanitizes an input into a string so it can be passed into issueCommand safely
- * @param input input to sanitize into a string
- */
-function toCommandValue(input) {
-    if (input === null || input === undefined) {
-        return '';
-    }
-    else if (typeof input === 'string' || input instanceof String) {
-        return input;
-    }
-    return JSON.stringify(input);
-}
-exports.toCommandValue = toCommandValue;
 function escapeData(s) {
-    return toCommandValue(s)
+    return utils_1.toCommandValue(s)
         .replace(/%/g, '%25')
         .replace(/\r/g, '%0D')
         .replace(/\n/g, '%0A');
 }
 function escapeProperty(s) {
-    return toCommandValue(s)
+    return utils_1.toCommandValue(s)
         .replace(/%/g, '%25')
         .replace(/\r/g, '%0D')
         .replace(/\n/g, '%0A')
@@ -178,6 +165,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const command_1 = __webpack_require__(7351);
+const file_command_1 = __webpack_require__(717);
+const utils_1 = __webpack_require__(5278);
 const os = __importStar(__webpack_require__(2087));
 const path = __importStar(__webpack_require__(5622));
 /**
@@ -204,9 +193,17 @@ var ExitCode;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function exportVariable(name, val) {
-    const convertedVal = command_1.toCommandValue(val);
+    const convertedVal = utils_1.toCommandValue(val);
     process.env[name] = convertedVal;
-    command_1.issueCommand('set-env', { name }, convertedVal);
+    const filePath = process.env['GITHUB_ENV'] || '';
+    if (filePath) {
+        const delimiter = '_GitHubActionsFileCommandDelimeter_';
+        const commandValue = `${name}<<${delimiter}${os.EOL}${convertedVal}${os.EOL}${delimiter}`;
+        file_command_1.issueCommand('ENV', commandValue);
+    }
+    else {
+        command_1.issueCommand('set-env', { name }, convertedVal);
+    }
 }
 exports.exportVariable = exportVariable;
 /**
@@ -222,7 +219,13 @@ exports.setSecret = setSecret;
  * @param inputPath
  */
 function addPath(inputPath) {
-    command_1.issueCommand('add-path', {}, inputPath);
+    const filePath = process.env['GITHUB_PATH'] || '';
+    if (filePath) {
+        file_command_1.issueCommand('PATH', inputPath);
+    }
+    else {
+        command_1.issueCommand('add-path', {}, inputPath);
+    }
     process.env['PATH'] = `${inputPath}${path.delimiter}${process.env['PATH']}`;
 }
 exports.addPath = addPath;
@@ -381,6 +384,68 @@ function getState(name) {
 }
 exports.getState = getState;
 //# sourceMappingURL=core.js.map
+
+/***/ }),
+
+/***/ 717:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+// For internal use, subject to change.
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+// We use any as a valid input type
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const fs = __importStar(__webpack_require__(5747));
+const os = __importStar(__webpack_require__(2087));
+const utils_1 = __webpack_require__(5278);
+function issueCommand(command, message) {
+    const filePath = process.env[`GITHUB_${command}`];
+    if (!filePath) {
+        throw new Error(`Unable to find environment variable for file command ${command}`);
+    }
+    if (!fs.existsSync(filePath)) {
+        throw new Error(`Missing file at path: ${filePath}`);
+    }
+    fs.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os.EOL}`, {
+        encoding: 'utf8'
+    });
+}
+exports.issueCommand = issueCommand;
+//# sourceMappingURL=file-command.js.map
+
+/***/ }),
+
+/***/ 5278:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+// We use any as a valid input type
+/* eslint-disable @typescript-eslint/no-explicit-any */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+/**
+ * Sanitizes an input into a string so it can be passed into issueCommand safely
+ * @param input input to sanitize into a string
+ */
+function toCommandValue(input) {
+    if (input === null || input === undefined) {
+        return '';
+    }
+    else if (typeof input === 'string' || input instanceof String) {
+        return input;
+    }
+    return JSON.stringify(input);
+}
+exports.toCommandValue = toCommandValue;
+//# sourceMappingURL=utils.js.map
 
 /***/ }),
 
@@ -2269,9 +2334,10 @@ function asPromise(normalizedOptions) {
                 reject(error);
             };
             request.once('error', onError);
+            const previousBody = request.options.body;
             request.once('retry', (newRetryCount, error) => {
-                var _a;
-                if (is_1.default.nodeStream((_a = error.request) === null || _a === void 0 ? void 0 : _a.options.body)) {
+                var _a, _b;
+                if (previousBody === ((_a = error.request) === null || _a === void 0 ? void 0 : _a.options.body) && is_1.default.nodeStream((_b = error.request) === null || _b === void 0 ? void 0 : _b.options.body)) {
                     onError(error);
                     return;
                 }
@@ -2415,7 +2481,7 @@ const parseBody = (response, responseType, parseJson, encoding) => {
             return rawBody.length === 0 ? '' : parseJson(rawBody.toString());
         }
         if (responseType === 'buffer') {
-            return Buffer.from(rawBody);
+            return rawBody;
         }
         throw new types_1.ParseError({
             message: `Unknown body type '${responseType}'`,
@@ -2817,18 +2883,28 @@ class Request extends stream_1.Duplex {
         if (json || body || form) {
             this._lockWrite();
         }
-        (async (nonNormalizedOptions) => {
+        if (exports.kIsNormalizedAlready in options) {
+            this.options = options;
+        }
+        else {
+            try {
+                // @ts-expect-error Common TypeScript bug saying that `this.constructor` is not accessible
+                this.options = this.constructor.normalizeArguments(url, options, defaults);
+            }
+            catch (error) {
+                // TODO: Move this to `_destroy()`
+                if (is_1.default.nodeStream(options.body)) {
+                    options.body.destroy();
+                }
+                this.destroy(error);
+                return;
+            }
+        }
+        (async () => {
             var _a;
             try {
-                if (nonNormalizedOptions.body instanceof fs_1.ReadStream) {
-                    await waitForOpenFile(nonNormalizedOptions.body);
-                }
-                if (exports.kIsNormalizedAlready in nonNormalizedOptions) {
-                    this.options = nonNormalizedOptions;
-                }
-                else {
-                    // @ts-expect-error Common TypeScript bug saying that `this.constructor` is not accessible
-                    this.options = this.constructor.normalizeArguments(url, nonNormalizedOptions, defaults);
+                if (this.options.body instanceof fs_1.ReadStream) {
+                    await waitForOpenFile(this.options.body);
                 }
                 const { url: normalizedURL } = this.options;
                 if (!normalizedURL) {
@@ -2860,7 +2936,7 @@ class Request extends stream_1.Duplex {
                     this.destroy(error);
                 }
             }
-        })(options);
+        })();
     }
     static normalizeArguments(url, options, defaults) {
         var _a, _b, _c, _d, _e;
@@ -2916,6 +2992,7 @@ class Request extends stream_1.Duplex {
             is_1.assert.any([is_1.default.string, is_1.default.object, is_1.default.array, is_1.default.undefined], options.https.key);
             is_1.assert.any([is_1.default.string, is_1.default.object, is_1.default.array, is_1.default.undefined], options.https.certificate);
             is_1.assert.any([is_1.default.string, is_1.default.undefined], options.https.passphrase);
+            is_1.assert.any([is_1.default.string, is_1.default.buffer, is_1.default.array, is_1.default.undefined], options.https.pfx);
         }
         is_1.assert.any([is_1.default.object, is_1.default.undefined], options.cacheOptions);
         // `options.method`
@@ -2994,6 +3071,9 @@ class Request extends stream_1.Duplex {
             options.url = options_to_url_1.default(options.prefixUrl, options);
         }
         if (options.url) {
+            if ('port' in options) {
+                delete options.port;
+            }
             // Make it possible to change `options.prefixUrl`
             let { prefixUrl } = options;
             Object.defineProperty(options, 'prefixUrl', {
@@ -3136,7 +3216,7 @@ class Request extends stream_1.Duplex {
         if (defaults && !areHooksDefault) {
             for (const event of exports.knownHookEvents) {
                 const defaultHooks = defaults.hooks[event];
-                if (defaultHooks.length !== 0) {
+                if (defaultHooks.length > 0) {
                     // See https://github.com/microsoft/TypeScript/issues/31445#issuecomment-576929044
                     options.hooks[event] = [
                         ...defaults.hooks[event],
@@ -3170,6 +3250,9 @@ class Request extends stream_1.Duplex {
         }
         if ('passphrase' in options) {
             deprecation_warning_1.default('"options.passphrase" was never documented, please use "options.https.passphrase"');
+        }
+        if ('pfx' in options) {
+            deprecation_warning_1.default('"options.pfx" was never documented, please use "options.https.pfx"');
         }
         // Other options
         if ('followRedirects' in options) {
@@ -3348,6 +3431,8 @@ class Request extends stream_1.Duplex {
                 if ('form' in options) {
                     delete options.form;
                 }
+                this[kBody] = undefined;
+                delete options.headers['content-length'];
             }
             if (this.redirects.length >= options.maxRedirects) {
                 this._beforeError(new MaxRedirectsError(this));
@@ -3372,15 +3457,13 @@ class Request extends stream_1.Duplex {
                         delete options.headers.authorization;
                     }
                     if (options.username || options.password) {
-                        // TODO: Fix this ignore.
-                        // @ts-expect-error
-                        delete options.username;
-                        // @ts-expect-error
-                        delete options.password;
+                        options.username = '';
+                        options.password = '';
                     }
-                    if ('port' in options) {
-                        delete options.port;
-                    }
+                }
+                else {
+                    redirectUrl.username = options.username;
+                    redirectUrl.password = options.password;
                 }
                 this.redirects.push(redirectString);
                 options.url = redirectUrl;
@@ -3455,12 +3538,7 @@ class Request extends stream_1.Duplex {
             request.destroy();
             // Node.js <= 12.18.2 mistakenly emits the response `end` first.
             (_a = request.res) === null || _a === void 0 ? void 0 : _a.removeAllListeners('end');
-            if (error instanceof timed_out_1.TimeoutError) {
-                error = new TimeoutError(error, this.timings, this);
-            }
-            else {
-                error = new RequestError(error.message, error, this);
-            }
+            error = error instanceof timed_out_1.TimeoutError ? new TimeoutError(error, this.timings, this) : new RequestError(error.message, error, this);
             this._beforeError(error);
         });
         this[kUnproxyEvents] = proxy_events_1.default(request, this, proxiedRequestEvents);
@@ -3548,6 +3626,9 @@ class Request extends stream_1.Duplex {
                 break;
             }
         }
+        if (options.body && this[kBody] !== options.body) {
+            this[kBody] = options.body;
+        }
         const { agent, request, timeout, url } = options;
         if (options.dnsCache && !('lookup' in options)) {
             options.lookup = options.dnsCache.lookup;
@@ -3620,6 +3701,9 @@ class Request extends stream_1.Duplex {
             if (options.https.passphrase) {
                 requestOptions.passphrase = options.https.passphrase;
             }
+            if (options.https.pfx) {
+                requestOptions.pfx = options.https.pfx;
+            }
         }
         try {
             let requestOrResponse = await fn(url, requestOptions);
@@ -3650,6 +3734,9 @@ class Request extends stream_1.Duplex {
                 }
                 if (options.https.passphrase) {
                     delete requestOptions.passphrase;
+                }
+                if (options.https.pfx) {
+                    delete requestOptions.pfx;
                 }
             }
             if (isClientRequest(requestOrResponse)) {
@@ -3815,7 +3902,7 @@ class Request extends stream_1.Duplex {
         });
         // TODO: What happens if it's from cache? Then this[kRequest] won't be defined.
         this[kRequest].write(chunk, encoding, (error) => {
-            if (!error && this._progressCallbacks.length !== 0) {
+            if (!error && this._progressCallbacks.length > 0) {
                 this._progressCallbacks.shift()();
             }
             callback(error);
@@ -3879,7 +3966,7 @@ class Request extends stream_1.Duplex {
     */
     get ip() {
         var _a;
-        return (_a = this[kRequest]) === null || _a === void 0 ? void 0 : _a.socket.remoteAddress;
+        return (_a = this.socket) === null || _a === void 0 ? void 0 : _a.remoteAddress;
     }
     /**
     Indicates whether the request has been aborted or not.
@@ -3889,8 +3976,8 @@ class Request extends stream_1.Duplex {
         return ((_b = (_a = this[kRequest]) === null || _a === void 0 ? void 0 : _a.destroyed) !== null && _b !== void 0 ? _b : this.destroyed) && !((_c = this[kOriginalResponse]) === null || _c === void 0 ? void 0 : _c.complete);
     }
     get socket() {
-        var _a;
-        return (_a = this[kRequest]) === null || _a === void 0 ? void 0 : _a.socket;
+        var _a, _b;
+        return (_b = (_a = this[kRequest]) === null || _a === void 0 ? void 0 : _a.socket) !== null && _b !== void 0 ? _b : undefined;
     }
     /**
     Progress event for downloading (receiving a response).
@@ -4045,6 +4132,9 @@ exports.default = async (body, headers) => {
     }
     if (body instanceof fs_1.ReadStream) {
         const { size } = await statAsync(body.path);
+        if (size === 0) {
+            return undefined;
+        }
         return size;
     }
     return undefined;
@@ -4370,7 +4460,7 @@ exports.default = (url) => {
         href: url.href,
         path: `${url.pathname || ''}${url.search || ''}`
     };
-    if (is_1.default.string(url.port) && url.port.length !== 0) {
+    if (is_1.default.string(url.port) && url.port.length > 0) {
         options.port = Number(url.port);
     }
     if (url.username || url.password) {
@@ -4507,7 +4597,7 @@ const create = (defaults) => {
         return result;
     }));
     // Got interface
-    const got = ((url, options, _defaults) => {
+    const got = ((url, options = {}, _defaults) => {
         var _a, _b;
         let iteration = 0;
         const iterateHandlers = (newOptions) => {
@@ -4528,7 +4618,7 @@ const create = (defaults) => {
             let initHookError;
             try {
                 callInitHooks(defaults.options.hooks.init, options);
-                callInitHooks((_a = options === null || options === void 0 ? void 0 : options.hooks) === null || _a === void 0 ? void 0 : _a.init, options);
+                callInitHooks((_a = options.hooks) === null || _a === void 0 ? void 0 : _a.init, options);
             }
             catch (error) {
                 initHookError = error;
@@ -4542,11 +4632,11 @@ const create = (defaults) => {
             return iterateHandlers(normalizedOptions);
         }
         catch (error) {
-            if (options === null || options === void 0 ? void 0 : options.isStream) {
+            if (options.isStream) {
                 throw error;
             }
             else {
-                return create_rejection_1.default(error, defaults.options.hooks.beforeError, (_b = options === null || options === void 0 ? void 0 : options.hooks) === null || _b === void 0 ? void 0 : _b.beforeError);
+                return create_rejection_1.default(error, defaults.options.hooks.beforeError, (_b = options.hooks) === null || _b === void 0 ? void 0 : _b.beforeError);
             }
         }
     });
