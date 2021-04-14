@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/betahuhn/ifttt-status#readme",
   "dependencies": {
-    "@actions/core": "^1.2.6",
+    "@actions/core": "^1.2.7",
     "got": "^11.8.2"
   },
   "devDependencies": {
