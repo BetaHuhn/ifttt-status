@@ -28,7 +28,7 @@
     "got": "^11.8.2"
   },
   "devDependencies": {
-    "@vercel/ncc": "^0.28.4",
+    "@vercel/ncc": "^0.28.5",
     "eslint": "^7.25.0"
   }
 }
