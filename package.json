@@ -25,7 +25,7 @@
   "homepage": "https://github.com/betahuhn/ifttt-status#readme",
   "dependencies": {
     "@actions/core": "^1.9.0",
-    "got": "^11.8.3"
+    "got": "^12.3.0"
   },
   "devDependencies": {
     "@vercel/ncc": "^0.34.0",
