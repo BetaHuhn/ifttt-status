@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: c-hive/gha-npm-cache@v1
+      - uses: c-hive/gha-npm-cache@v1.0.2
       - name: Install server dependencies
         run: npm install
       - name: Build
